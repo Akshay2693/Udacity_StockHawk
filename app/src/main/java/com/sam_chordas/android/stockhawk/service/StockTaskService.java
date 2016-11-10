@@ -5,15 +5,23 @@ import android.content.Context;
 import android.content.OperationApplicationException;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.RemoteException;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.gcm.GcmNetworkManager;
 import com.google.android.gms.gcm.GcmTaskService;
 import com.google.android.gms.gcm.TaskParams;
+import com.sam_chordas.android.stockhawk.R;
 import com.sam_chordas.android.stockhawk.data.QuoteColumns;
 import com.sam_chordas.android.stockhawk.data.QuoteProvider;
 import com.sam_chordas.android.stockhawk.rest.Utils;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -124,8 +132,22 @@ public class StockTaskService extends GcmTaskService{
             mContext.getContentResolver().update(QuoteProvider.Quotes.CONTENT_URI, contentValues,
                 null, null);
           }
-          mContext.getContentResolver().applyBatch(QuoteProvider.AUTHORITY,
-              Utils.quoteJsonToContentVals(getResponse));
+          if(isValidQuote(getResponse)){
+            mContext.getContentResolver().applyBatch(QuoteProvider.AUTHORITY,
+                    Utils.quoteJsonToContentVals(getResponse));
+          } else {
+            // Create a runnable to show a Toast message on the main UI thread.
+            Handler handler = new Handler(Looper.getMainLooper());
+            handler.post(new Runnable() {
+
+              @Override
+              public void run() {
+                Toast.makeText(mContext,
+                        getString(R.string.toast_stock_invalid),
+                        Toast.LENGTH_SHORT).show();
+              }
+            });
+          }
         }catch (RemoteException | OperationApplicationException e){
           Log.e(LOG_TAG, "Error applying batch insert", e);
         }
@@ -137,4 +159,57 @@ public class StockTaskService extends GcmTaskService{
     return result;
   }
 
+  /**
+   * Checks that the resulting JSON contains valid quote data. Searches for invalid ticker symbols
+   * returns a valid JSON string, but the quote data is all "null" so we have to manually check.
+   * @param response JSON string returned from the yahoo stocks API
+   * @return True if quote data is valid, false if not.
+     */
+  private boolean isValidQuote(String JSON){
+
+    JSONObject jsonObject = null;
+    JSONArray resultsArray = null;
+    boolean isValid = true;
+
+    try{
+      jsonObject = new JSONObject(JSON);
+      if (jsonObject != null && jsonObject.length() != 0){
+        jsonObject = jsonObject.getJSONObject("query");
+        int count = Integer.parseInt(jsonObject.getString("count"));
+        if (count == 1){
+          jsonObject = jsonObject.getJSONObject("results")
+                  .getJSONObject("quote");
+
+          // If this field == 'null' then the quote is invalid
+          if(jsonObject.getString("Ask").equals("null")){
+            isValid = false;
+          }
+
+        } else{
+          resultsArray = jsonObject.getJSONObject("results").getJSONArray("quote");
+
+          if (resultsArray != null && resultsArray.length() != 0){
+            for (int i = 0; i < resultsArray.length(); i++){
+              jsonObject = resultsArray.getJSONObject(i);
+
+              // If this field == 'null' then the quote is invalid
+              if(jsonObject.getString("Ask").equals("null")){
+                isValid = false;
+              }
+
+            }
+          }
+        }
+      }
+    } catch (JSONException e){
+      Log.e(LOG_TAG, "String to JSON failed: " + e);
+    }
+
+    if(isValid){
+      Log.d(LOG_TAG, "Quote is valid.");
+    } else {
+      Log.d(LOG_TAG, "Quote is invalid.");
+    }
+    return isValid;
+  }
 }
