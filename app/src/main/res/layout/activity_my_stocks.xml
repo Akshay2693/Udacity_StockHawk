@@ -1,10 +1,16 @@
-
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:fab="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    >
+    xmlns:tools="http://schemas.android.com/apk/res-auto">
+
+  <ProgressBar
+      android:id="@+id/progress_bar"
+      android:layout_width="match_parent"
+      android:layout_height="@dimen/progress_bar_width"
+      style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+      android:indeterminate="true"
+      android:visibility="invisible"/>
 
   <android.support.v7.widget.RecyclerView
       android:id="@+id/recycler_view"

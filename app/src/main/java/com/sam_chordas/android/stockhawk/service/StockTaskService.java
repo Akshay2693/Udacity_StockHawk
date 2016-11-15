@@ -2,13 +2,16 @@ package com.sam_chordas.android.stockhawk.service;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.OperationApplicationException;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.RemoteException;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.google.android.gms.gcm.GcmNetworkManager;
@@ -43,12 +46,14 @@ public class StockTaskService extends GcmTaskService{
   private Context mContext;
   private StringBuilder mStoredSymbols = new StringBuilder();
   private boolean isUpdate;
+  private ProgressBar mProgressBar;
 
   public StockTaskService(){}
 
   public StockTaskService(Context context){
     mContext = context;
   }
+
   String fetchData(String url) throws IOException{
     Request request = new Request.Builder()
         .url(url)
@@ -64,6 +69,7 @@ public class StockTaskService extends GcmTaskService{
     if (mContext == null){
       mContext = this;
     }
+
     StringBuilder urlStringBuilder = new StringBuilder();
     try{
       // Base URL for the Yahoo query
@@ -122,6 +128,8 @@ public class StockTaskService extends GcmTaskService{
     if (urlStringBuilder != null){
       urlString = urlStringBuilder.toString();
       try{
+        // Network communication starts, show progress bar until result is received
+        showProgress();
         getResponse = fetchData(urlString);
         result = GcmNetworkManager.RESULT_SUCCESS;
         try {
@@ -137,22 +145,18 @@ public class StockTaskService extends GcmTaskService{
                     Utils.quoteJsonToContentVals(getResponse));
           } else {
             // Create a runnable to show a Toast message on the main UI thread.
-            Handler handler = new Handler(Looper.getMainLooper());
-            handler.post(new Runnable() {
-
-              @Override
-              public void run() {
-                Toast.makeText(mContext,
-                        getString(R.string.toast_stock_invalid),
-                        Toast.LENGTH_SHORT).show();
-              }
-            });
+            showToast(mContext.getString(R.string.toast_stock_invalid));
           }
+          hideProgress();
         }catch (RemoteException | OperationApplicationException e){
           Log.e(LOG_TAG, "Error applying batch insert", e);
         }
       } catch (IOException e){
         e.printStackTrace();
+        Log.d(LOG_TAG, e.getMessage());
+        // Display the error to the user
+        showToast("Server error: " + e.getMessage());
+        hideProgress();
       }
     }
 
@@ -212,4 +216,44 @@ public class StockTaskService extends GcmTaskService{
     }
     return isValid;
   }
+
+  /**
+   * This method is used to display toast messages to the user
+   * @param message to be shown to the user
+     */
+  private void showToast(final String message){
+    Handler handler = new Handler(Looper.getMainLooper());
+    handler.post(new Runnable() {
+
+      @Override
+      public void run() {
+        Toast.makeText(mContext,
+                message,
+                Toast.LENGTH_SHORT).show();
+      }
+    });
+  }
+
+  /**
+   * Send an intent to the stocks activity to display the progress bar
+   */
+  private void showProgress(){
+    Intent intent = new Intent("update-progress-event");
+    // Add whether to display the progress bar
+    intent.putExtra("display-progress", true);
+    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+  }
+
+  /**
+   * Send an intent to the stocks activity to hide the progress bar
+   */
+  private void hideProgress(){
+    Intent intent = new Intent("update-progress-event");
+    // Add whether to display the progress bar
+    intent.putExtra("display-progress", false);
+    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+  }
+
 }
+
+
