@@ -74,11 +74,20 @@ public class StockTaskService extends GcmTaskService{
     try{
       // Base URL for the Yahoo query
       urlStringBuilder.append("https://query.yahooapis.com/v1/public/yql?q=");
-      urlStringBuilder.append(URLEncoder.encode("select * from yahoo.finance.quotes where symbol "
-        + "in (", "UTF-8"));
+      if(params.getTag().equals("detail")){
+        // Build a detail query
+        urlStringBuilder.append(URLEncoder.encode("select * from yahoo.finance.historicaldata "
+                + "where symbol = ", "UTF-8"));
+      } else {
+        // Build a quotes query
+        urlStringBuilder.append(URLEncoder.encode("select * from yahoo.finance.quotes where symbol "
+                + "in (", "UTF-8"));
+      }
     } catch (UnsupportedEncodingException e) {
       e.printStackTrace();
     }
+
+    // Create a recurring query url
     if (params.getTag().equals("init") || params.getTag().equals("periodic")){
       isUpdate = true;
       initQueryCursor = mContext.getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
@@ -107,6 +116,8 @@ public class StockTaskService extends GcmTaskService{
           e.printStackTrace();
         }
       }
+
+      // Create a new stock query URL
     } else if (params.getTag().equals("add")){
       isUpdate = false;
       // get symbol from params.getExtra and build query
@@ -116,7 +127,27 @@ public class StockTaskService extends GcmTaskService{
       } catch (UnsupportedEncodingException e){
         e.printStackTrace();
       }
+
+      // Create a stock detail query URL
+    } else if (params.getTag().equals("detail")){
+      isUpdate = false;
+      // get symbol from params.getExtra and build query
+      String stockInput = params.getExtras().getString("symbol");
+
+      // Override for debug
+      stockInput = "AAPL";
+
+      try {
+        urlStringBuilder.append(URLEncoder.encode("\""+stockInput+"\"", "UTF-8"));
+        urlStringBuilder.append(URLEncoder.encode(" and startDate = \"2016-11-01\"" +
+                " and endDate = \"2016-11-07\"", "UTF-8"));
+      } catch (UnsupportedEncodingException e){
+        e.printStackTrace();
+      }
+
     }
+
+
     // finalize the URL for the API query.
     urlStringBuilder.append("&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables."
         + "org%2Falltableswithkeys&callback=");
@@ -127,6 +158,7 @@ public class StockTaskService extends GcmTaskService{
 
     if (urlStringBuilder != null){
       urlString = urlStringBuilder.toString();
+      Log.d(LOG_TAG, "URL is: " + urlString);
       try{
         // Network communication starts, show progress bar until result is received
         showProgress();
@@ -140,14 +172,22 @@ public class StockTaskService extends GcmTaskService{
             mContext.getContentResolver().update(QuoteProvider.Quotes.CONTENT_URI, contentValues,
                 null, null);
           }
-          if(isValidQuote(getResponse)){
-            mContext.getContentResolver().applyBatch(QuoteProvider.AUTHORITY,
-                    Utils.quoteJsonToContentVals(getResponse));
+
+          if(params.getTag().equals("detail")){
+            // Process the result for details
+            sendResult(getResponse);
           } else {
-            // Create a runnable to show a Toast message on the main UI thread.
-            showToast(mContext.getString(R.string.toast_stock_invalid));
+            // Process the result for a quote
+            if(isValidQuote(getResponse)){
+              mContext.getContentResolver().applyBatch(QuoteProvider.AUTHORITY,
+                      Utils.quoteJsonToContentVals(getResponse));
+            } else {
+              // Create a runnable to show a Toast message on the main UI thread.
+              showToast(mContext.getString(R.string.toast_stock_invalid));
+            }
           }
           hideProgress();
+
         }catch (RemoteException | OperationApplicationException e){
           Log.e(LOG_TAG, "Error applying batch insert", e);
         }
@@ -166,7 +206,7 @@ public class StockTaskService extends GcmTaskService{
   /**
    * Checks that the resulting JSON contains valid quote data. Searches for invalid ticker symbols
    * returns a valid JSON string, but the quote data is all "null" so we have to manually check.
-   * @param response JSON string returned from the yahoo stocks API
+   * @param JSON string returned from the yahoo stocks API
    * @return True if quote data is valid, false if not.
      */
   private boolean isValidQuote(String JSON){
@@ -252,6 +292,16 @@ public class StockTaskService extends GcmTaskService{
     // Add whether to display the progress bar
     intent.putExtra("display-progress", false);
     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+  }
+
+  /**
+   * Send the resulting detail JSON back to the detail activity for processing
+   */
+  private void sendResult(String result){
+    Intent intent = new Intent("send-result-event");
+    intent.putExtra("result", result);
+    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    stopSelf();
   }
 
 }

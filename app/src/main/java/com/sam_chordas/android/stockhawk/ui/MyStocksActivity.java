@@ -99,6 +99,8 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
                     public void onItemClick(View v, int position) {
                         //TODO:
                         // do something on item click
+                        Intent intent = new Intent(mContext, DetailActivity.class);
+                        startActivity(intent);
                     }
                 }));
         recyclerView.setAdapter(mCursorAdapter);
@@ -184,7 +186,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
             }
         }
     };
-    
+
     @Override
     public void onResume() {
         super.onResume();
