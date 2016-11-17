@@ -10,10 +10,28 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.sam_chordas.android.stockhawk.ui.DetailActivity">
 
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/progress_bar_width"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        android:indeterminate="true"
+        android:visibility="invisible"/>
+
     <TextView
         android:id="@+id/detail_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Empty for now"/>
+        android:text="Empty for now" />
+
+    <com.db.chart.view.LineChartView
+        xmlns:chart="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/detail_line_chart"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_below="@+id/detail_text"
+        chart:chart_axisColor="#FFFFFF"
+        />
+
 
 </RelativeLayout>

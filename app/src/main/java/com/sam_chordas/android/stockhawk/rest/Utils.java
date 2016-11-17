@@ -3,6 +3,7 @@ package com.sam_chordas.android.stockhawk.rest;
 import android.content.ContentProviderOperation;
 import android.util.Log;
 
+import com.db.chart.model.LineSet;
 import com.sam_chordas.android.stockhawk.data.QuoteColumns;
 import com.sam_chordas.android.stockhawk.data.QuoteProvider;
 
@@ -49,6 +50,40 @@ public class Utils {
             Log.e(LOG_TAG, "String to JSON failed: " + e);
         }
         return batchOperations;
+    }
+
+    /**
+     * Takes a the result of a historical query and returns an LineSet of closing prices
+     * @param JSON result string
+     * @return LineSet of closing prices
+     */
+    public static LineSet historyJsonToContentVals(String JSON){
+        LineSet stockQuotes = new LineSet();
+        JSONObject jsonObject = null;
+        JSONArray resultsArray = null;
+        try{
+            jsonObject = new JSONObject(JSON);
+            if (jsonObject != null && jsonObject.length() != 0){
+                jsonObject = jsonObject.getJSONObject("query");
+                int count = Integer.parseInt(jsonObject.getString("count"));
+                if (count != 0){
+                    resultsArray = jsonObject.getJSONObject("results").getJSONArray("quote");
+                    if (resultsArray != null && resultsArray.length() != 0){
+                        for (int i = 0; i < resultsArray.length(); i++){
+                            jsonObject = resultsArray.getJSONObject(i);
+
+                            // TODO: Populate arraylist with LineSet objects
+                            stockQuotes.addPoint(jsonObject.getString("Date")
+                                    , Float.parseFloat(jsonObject.getString("Close")));
+                        }
+                    }
+                }
+            }
+        } catch (JSONException e){
+            Log.e(LOG_TAG, "String to JSON failed: " + e);
+        }
+
+        return stockQuotes;
     }
 
     public static String truncateBidPrice(String bidPrice){

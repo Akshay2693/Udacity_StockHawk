@@ -142,7 +142,7 @@ public class StockTaskService extends GcmTaskService{
 
       try {
         urlStringBuilder.append(URLEncoder.encode("\""+stockInput+"\"", "UTF-8"));
-        urlStringBuilder.append(URLEncoder.encode(" and startDate = \"2016-11-01\"" +
+        urlStringBuilder.append(URLEncoder.encode(" and startDate = \"2016-10-01\"" +
                 " and endDate = \"2016-11-07\"", "UTF-8"));
       } catch (UnsupportedEncodingException e){
         e.printStackTrace();
