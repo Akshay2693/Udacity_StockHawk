@@ -8,6 +8,9 @@ import com.google.android.gms.gcm.TaskParams;
 
 /**
  * Created by sam_chordas on 10/1/15.
+ *
+ * Calling StockIntentService runs StockTaskService immediately, rather than using the
+ * task scheduler.
  */
 public class StockIntentService extends IntentService {
 
@@ -23,7 +26,8 @@ public class StockIntentService extends IntentService {
     Log.d(StockIntentService.class.getSimpleName(), "Stock Intent Service");
     StockTaskService stockTaskService = new StockTaskService(this);
     Bundle args = new Bundle();
-    if (intent.getStringExtra("tag").equals("add")){
+    if (intent.getStringExtra("tag").equals("add") || intent.getStringExtra("tag")
+            .equals("detail")){
       args.putString("symbol", intent.getStringExtra("symbol"));
     }
     // We can call OnRunTask from the intent service to force it to run immediately instead of

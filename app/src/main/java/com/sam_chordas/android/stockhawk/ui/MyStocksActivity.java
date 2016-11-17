@@ -23,6 +23,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
@@ -97,9 +98,11 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
                 new RecyclerViewItemClickListener.OnItemClickListener() {
                     @Override
                     public void onItemClick(View v, int position) {
-                        //TODO:
-                        // do something on item click
+                        TextView symbolView = (TextView) v.findViewById(R.id.stock_symbol);
+                        String stockSymbol = symbolView.getText().toString();
+
                         Intent intent = new Intent(mContext, DetailActivity.class);
+                        intent.putExtra("symbol", stockSymbol);
                         startActivity(intent);
                     }
                 }));

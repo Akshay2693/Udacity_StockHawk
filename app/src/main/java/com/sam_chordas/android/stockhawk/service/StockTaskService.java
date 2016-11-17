@@ -11,7 +11,6 @@ import android.os.Looper;
 import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.google.android.gms.gcm.GcmNetworkManager;
@@ -46,7 +45,7 @@ public class StockTaskService extends GcmTaskService{
   private Context mContext;
   private StringBuilder mStoredSymbols = new StringBuilder();
   private boolean isUpdate;
-  private ProgressBar mProgressBar;
+  private String mSymbol;
 
   public StockTaskService(){}
 
@@ -61,6 +60,13 @@ public class StockTaskService extends GcmTaskService{
 
     Response response = client.newCall(request).execute();
     return response.body().string();
+  }
+
+  @Override
+  public int onStartCommand(Intent intent, int i, int i1) {
+    mSymbol = intent.getStringExtra("symbol");
+
+    return super.onStartCommand(intent, i, i1);
   }
 
   @Override
@@ -133,9 +139,6 @@ public class StockTaskService extends GcmTaskService{
       isUpdate = false;
       // get symbol from params.getExtra and build query
       String stockInput = params.getExtras().getString("symbol");
-
-      // Override for debug
-      stockInput = "AAPL";
 
       try {
         urlStringBuilder.append(URLEncoder.encode("\""+stockInput+"\"", "UTF-8"));

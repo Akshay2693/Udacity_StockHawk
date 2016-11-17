@@ -44,7 +44,7 @@ public class DetailActivity extends AppCompatActivity {
             // Create and start intent to get stock history
             mServiceIntent = new Intent(this, StockIntentService.class);
             mServiceIntent.putExtra("tag", "detail");
-            mServiceIntent.putExtra("symbol", "TEST");
+            mServiceIntent.putExtra("symbol", getIntent().getStringExtra("symbol"));
             startService(mServiceIntent);
         } else {
             networkToast();
