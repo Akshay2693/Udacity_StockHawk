@@ -87,7 +87,7 @@ public class Utils {
     }
 
     public static String truncateBidPrice(String bidPrice){
-        bidPrice = String.format("%.2f", Float.parseFloat(bidPrice));
+        bidPrice = String.format("$%.2f", Float.parseFloat(bidPrice));
         return bidPrice;
     }
 
@@ -105,6 +105,7 @@ public class Utils {
         changeBuffer.insert(0, weight);
         changeBuffer.append(ampersand);
         change = changeBuffer.toString();
+        if(!isPercentChange) change = "$" + change;
         return change;
     }
 

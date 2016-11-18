@@ -14,4 +14,9 @@
     <string name="toast_network_disconnected">Uh-oh! This app requires an internet connection</string>
     <string name="toast_stock_duplicate">This stock is already saved!</string>
     <string name="toast_stock_invalid">This stock symbol doesn\'t exist!</string>
+
+    <!-- Quotes list -->
+
+    <!-- Details page -->
+    <string name="detail_current_price">$</string>
 </resources>
