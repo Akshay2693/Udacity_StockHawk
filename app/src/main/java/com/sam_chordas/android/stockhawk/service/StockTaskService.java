@@ -28,6 +28,10 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -141,9 +145,19 @@ public class StockTaskService extends GcmTaskService{
       String stockInput = params.getExtras().getString("symbol");
 
       try {
+        // Get the current date
+        Calendar cal = Calendar.getInstance();
+        Date endDate = cal.getTime();
+        cal.add(Calendar.MONTH, -1);
+        Date startDate = cal.getTime();
+
+        // Format dates
+        String endDateString = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(endDate);
+        String startDateString = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(startDate);
+
         urlStringBuilder.append(URLEncoder.encode("\""+stockInput+"\"", "UTF-8"));
-        urlStringBuilder.append(URLEncoder.encode(" and startDate = \"2016-10-01\"" +
-                " and endDate = \"2016-11-07\"", "UTF-8"));
+        urlStringBuilder.append(URLEncoder.encode(" and startDate = \"" + startDateString + "\"" +
+                " and endDate = \"" + endDateString + "\"", "UTF-8"));
       } catch (UnsupportedEncodingException e){
         e.printStackTrace();
       }
