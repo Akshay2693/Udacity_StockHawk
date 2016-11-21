@@ -104,7 +104,8 @@ public class DetailActivity extends AppCompatActivity {
             String priceString = Utils.truncateBidPrice(currentPrice.toString());
             String changeString = Utils.truncateChange(changePrice.toString(), false);
             String percentString = Utils.truncateChange(percentChange.toString() + "%", true);
-            String detailString = changeString + " (" + percentString + ")";
+            String detailString = changeString + " (" + percentString + ") " +
+                    getString(R.string.detail_time_month);
 
             priceView.setText(priceString);
             changeView.setText(detailString);

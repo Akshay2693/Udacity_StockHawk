@@ -69,7 +69,7 @@ public class Utils {
                 if (count != 0){
                     resultsArray = jsonObject.getJSONObject("results").getJSONArray("quote");
                     if (resultsArray != null && resultsArray.length() != 0){
-                        for (int i = 0; i < resultsArray.length(); i++){
+                        for (int i = resultsArray.length()-1; i >= 0 ; i--){
                             jsonObject = resultsArray.getJSONObject(i);
 
                             // TODO: Populate arraylist with LineSet objects

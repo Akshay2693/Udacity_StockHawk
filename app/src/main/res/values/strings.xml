@@ -19,4 +19,5 @@
 
     <!-- Details page -->
     <string name="detail_current_price">$</string>
+    <string name="detail_time_month">Past Month</string>
 </resources>
