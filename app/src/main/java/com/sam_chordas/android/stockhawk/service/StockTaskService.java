@@ -201,6 +201,11 @@ public class StockTaskService extends GcmTaskService {
                         contentValues.put(QuoteColumns.ISCURRENT, 0);
                         mContext.getContentResolver().update(QuoteProvider.Quotes.CONTENT_URI, contentValues,
                                 null, null);
+
+                        // Send broadcast that data has been updated to notify widgets
+                        Intent intent = new Intent(ACTION_DATA_UPDATED)
+                                .setPackage(mContext.getPackageName());
+                        mContext.sendBroadcast(intent);
                     }
 
                     if (params.getTag().equals("detail")) {

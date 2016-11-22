@@ -18,7 +18,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.text.InputType;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -180,7 +179,6 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
         public void onReceive(Context context, Intent intent) {
             boolean displayProgress = intent.getBooleanExtra(
                     StockTaskService.EXTRA_UPDATE_PROGRESS, false);
-            Log.d(LOG_TAG, "Received progress update");
 
             ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar);
             if(displayProgress){
