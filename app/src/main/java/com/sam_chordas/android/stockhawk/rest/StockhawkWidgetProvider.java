@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.widget.RemoteViews;
 
 import com.sam_chordas.android.stockhawk.R;
+import com.sam_chordas.android.stockhawk.service.StockTaskService;
+import com.sam_chordas.android.stockhawk.service.StockhawkWidgetIntentService;
 import com.sam_chordas.android.stockhawk.ui.MyStocksActivity;
 
 /**
@@ -32,6 +34,16 @@ public class StockhawkWidgetProvider extends AppWidgetProvider{
             views.setOnClickPendingIntent(R.id.widget_quote, pendingIntent);
 
             appWidgetManager.updateAppWidget(appWidgetId, views);
+        }
+
+    }
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        super.onReceive(context, intent);
+
+        if(StockTaskService.ACTION_DATA_UPDATED.equals(intent.getAction())){
+            context.startService(new Intent(context, StockhawkWidgetIntentService.class));
         }
 
     }

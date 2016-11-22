@@ -68,7 +68,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
 
         // Register LocalBroadcastReceiver
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
-                new IntentFilter("update-progress-event"));
+                new IntentFilter(StockTaskService.ACTION_UPDATE_PROGRESS));
 
         ConnectivityManager cm =
                 (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -178,7 +178,8 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     private final BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            boolean displayProgress = intent.getBooleanExtra("display-progress", false);
+            boolean displayProgress = intent.getBooleanExtra(
+                    StockTaskService.EXTRA_UPDATE_PROGRESS, false);
             Log.d(LOG_TAG, "Received progress update");
 
             ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar);
@@ -205,7 +206,8 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     }
 
     public void networkToast() {
-        Toast.makeText(mContext, getString(R.string.toast_network_disconnected), Toast.LENGTH_SHORT).show();
+        Toast.makeText(mContext, getString(R.string.toast_network_disconnected),
+                Toast.LENGTH_SHORT).show();
     }
 
     public void restoreActionBar() {

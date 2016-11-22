@@ -24,6 +24,7 @@ import com.db.chart.view.LineChartView;
 import com.sam_chordas.android.stockhawk.R;
 import com.sam_chordas.android.stockhawk.rest.Utils;
 import com.sam_chordas.android.stockhawk.service.StockIntentService;
+import com.sam_chordas.android.stockhawk.service.StockTaskService;
 
 import static android.R.attr.data;
 
@@ -45,7 +46,7 @@ public class DetailActivity extends AppCompatActivity {
 
         // Register LocalBroadcastReceiver
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
-                new IntentFilter("send-result-event"));
+                new IntentFilter(StockTaskService.ACTION_SEND_RESULTS));
 
         ConnectivityManager cm =
                 (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -76,7 +77,7 @@ public class DetailActivity extends AppCompatActivity {
     private final BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String result = intent.getStringExtra("result");
+            String result = intent.getStringExtra(StockTaskService.EXTRA_SEND_RESULTS);
 
             // Grab UI elements
             //TextView textView = (TextView) findViewById(R.id.detail);
@@ -140,7 +141,7 @@ public class DetailActivity extends AppCompatActivity {
     private final BroadcastReceiver mProgressReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            boolean displayProgress = intent.getBooleanExtra("display-progress", false);
+            boolean displayProgress = intent.getBooleanExtra(StockTaskService.EXTRA_UPDATE_PROGRESS, false);
             Log.d(LOG_TAG, "Received progress update");
 
             ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar);

@@ -38,6 +38,8 @@
         </service>
         <service android:name=".service.StockIntentService" />
 
+        <service android:name=".service.StockhawkWidgetIntentService" />
+
         <provider
             android:name=".data.generated.QuoteProvider"
             android:authorities="com.sam_chordas.android.stockhawk.data.QuoteProvider"
@@ -48,6 +50,7 @@
         <receiver android:name=".rest.StockhawkWidgetProvider">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="com.sam_chordas.android.stockhawk.app.ACTION_DATA_UPDATED"/>
             </intent-filter>
             <meta-data android:name="android.appwidget.provider"
                 android:resource="@xml/stockhawk_widget_info"/>

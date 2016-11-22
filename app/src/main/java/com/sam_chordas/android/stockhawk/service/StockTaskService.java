@@ -42,284 +42,301 @@ import okhttp3.Response;
  * The GCMTask service is primarily for periodic tasks. However, OnRunTask can be called directly
  * and is used for the initialization and adding task as well.
  */
-public class StockTaskService extends GcmTaskService{
-  private String LOG_TAG = StockTaskService.class.getSimpleName();
+public class StockTaskService extends GcmTaskService {
+    private String LOG_TAG = StockTaskService.class.getSimpleName();
 
-  private OkHttpClient client = new OkHttpClient();
-  private Context mContext;
-  private StringBuilder mStoredSymbols = new StringBuilder();
-  private boolean isUpdate;
-  private String mSymbol;
+    private OkHttpClient client = new OkHttpClient();
+    private Context mContext;
+    private StringBuilder mStoredSymbols = new StringBuilder();
+    private boolean isUpdate;
+    private String mSymbol;
 
-  public StockTaskService(){}
+    public static String ACTION_UPDATE_PROGRESS =
+            "com.sam_chordas.android.stockhawk.app.ACTION_UPDATE_PROGRESS";
+    public static String EXTRA_UPDATE_PROGRESS =
+            "com.sam_chordas.android.stockhawk.app.EXTRA_UPDATE_PROGRESS";
+    public static String ACTION_SEND_RESULTS =
+            "com.sam_chordas.android.stockhawk.app.ACTION_SEND_RESULTS";
+    public static String EXTRA_SEND_RESULTS =
+            "com.sam_chordas.android.stockhawk.app.EXTRA_SEND_RESULTS";
 
-  public StockTaskService(Context context){
-    mContext = context;
-  }
+    public static String ACTION_DATA_UPDATED =
+            "com.sam_chordas.android.stockhawk.app.ACTION_DATA_UPDATED";
 
-  String fetchData(String url) throws IOException{
-    Request request = new Request.Builder()
-        .url(url)
-        .build();
-
-    Response response = client.newCall(request).execute();
-    return response.body().string();
-  }
-
-  @Override
-  public int onStartCommand(Intent intent, int i, int i1) {
-    mSymbol = intent.getStringExtra("symbol");
-
-    return super.onStartCommand(intent, i, i1);
-  }
-
-  @Override
-  public int onRunTask(TaskParams params){
-    Cursor initQueryCursor;
-    if (mContext == null){
-      mContext = this;
+    public StockTaskService() {
     }
 
-    StringBuilder urlStringBuilder = new StringBuilder();
-    try{
-      // Base URL for the Yahoo query
-      urlStringBuilder.append("https://query.yahooapis.com/v1/public/yql?q=");
-      if(params.getTag().equals("detail")){
-        // Build a detail query
-        urlStringBuilder.append(URLEncoder.encode("select * from yahoo.finance.historicaldata "
-                + "where symbol = ", "UTF-8"));
-      } else {
-        // Build a quotes query
-        urlStringBuilder.append(URLEncoder.encode("select * from yahoo.finance.quotes where symbol "
-                + "in (", "UTF-8"));
-      }
-    } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
+    public StockTaskService(Context context) {
+        mContext = context;
     }
 
-    // Create a recurring query url
-    if (params.getTag().equals("init") || params.getTag().equals("periodic")){
-      isUpdate = true;
-      initQueryCursor = mContext.getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
-          new String[] { "Distinct " + QuoteColumns.SYMBOL }, null,
-          null, null);
-      if (initQueryCursor.getCount() == 0 || initQueryCursor == null){
-        // Init task. Populates DB with quotes for the symbols seen below
-        try {
-          urlStringBuilder.append(
-              URLEncoder.encode("\"YHOO\",\"AAPL\",\"GOOG\",\"MSFT\")", "UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-          e.printStackTrace();
-        }
-      } else if (initQueryCursor != null){
-        DatabaseUtils.dumpCursor(initQueryCursor);
-        initQueryCursor.moveToFirst();
-        for (int i = 0; i < initQueryCursor.getCount(); i++){
-          mStoredSymbols.append("\""+
-              initQueryCursor.getString(initQueryCursor.getColumnIndex("symbol"))+"\",");
-          initQueryCursor.moveToNext();
-        }
-        mStoredSymbols.replace(mStoredSymbols.length() - 1, mStoredSymbols.length(), ")");
-        try {
-          urlStringBuilder.append(URLEncoder.encode(mStoredSymbols.toString(), "UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-          e.printStackTrace();
-        }
-      }
+    String fetchData(String url) throws IOException {
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
 
-      // Create a new stock query URL
-    } else if (params.getTag().equals("add")){
-      isUpdate = false;
-      // get symbol from params.getExtra and build query
-      String stockInput = params.getExtras().getString("symbol");
-      try {
-        urlStringBuilder.append(URLEncoder.encode("\""+stockInput+"\")", "UTF-8"));
-      } catch (UnsupportedEncodingException e){
-        e.printStackTrace();
-      }
-
-      // Create a stock detail query URL
-    } else if (params.getTag().equals("detail")){
-      isUpdate = false;
-      // get symbol from params.getExtra and build query
-      String stockInput = params.getExtras().getString("symbol");
-
-      try {
-        // Get the current date
-        Calendar cal = Calendar.getInstance();
-        Date endDate = cal.getTime();
-        cal.add(Calendar.MONTH, -1);
-        Date startDate = cal.getTime();
-
-        // Format dates
-        String endDateString = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(endDate);
-        String startDateString = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(startDate);
-
-        urlStringBuilder.append(URLEncoder.encode("\""+stockInput+"\"", "UTF-8"));
-        urlStringBuilder.append(URLEncoder.encode(" and startDate = \"" + startDateString + "\"" +
-                " and endDate = \"" + endDateString + "\"", "UTF-8"));
-      } catch (UnsupportedEncodingException e){
-        e.printStackTrace();
-      }
-
+        Response response = client.newCall(request).execute();
+        return response.body().string();
     }
 
+    @Override
+    public int onStartCommand(Intent intent, int i, int i1) {
+        mSymbol = intent.getStringExtra("symbol");
 
-    // finalize the URL for the API query.
-    urlStringBuilder.append("&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables."
-        + "org%2Falltableswithkeys&callback=");
+        return super.onStartCommand(intent, i, i1);
+    }
 
-    String urlString;
-    String getResponse;
-    int result = GcmNetworkManager.RESULT_FAILURE;
+    @Override
+    public int onRunTask(TaskParams params) {
+        Cursor initQueryCursor;
+        if (mContext == null) {
+            mContext = this;
+        }
 
-    if (urlStringBuilder != null){
-      urlString = urlStringBuilder.toString();
-      Log.d(LOG_TAG, "URL is: " + urlString);
-      try{
-        // Network communication starts, show progress bar until result is received
-        showProgress();
-        getResponse = fetchData(urlString);
-        result = GcmNetworkManager.RESULT_SUCCESS;
+        StringBuilder urlStringBuilder = new StringBuilder();
         try {
-          ContentValues contentValues = new ContentValues();
-          // update ISCURRENT to 0 (false) so new data is current
-          if (isUpdate){
-            contentValues.put(QuoteColumns.ISCURRENT, 0);
-            mContext.getContentResolver().update(QuoteProvider.Quotes.CONTENT_URI, contentValues,
-                null, null);
-          }
-
-          if(params.getTag().equals("detail")){
-            // Process the result for details
-            sendResult(getResponse);
-          } else {
-            // Process the result for a quote
-            if(isValidQuote(getResponse)){
-              mContext.getContentResolver().applyBatch(QuoteProvider.AUTHORITY,
-                      Utils.quoteJsonToContentVals(getResponse));
+            // Base URL for the Yahoo query
+            urlStringBuilder.append("https://query.yahooapis.com/v1/public/yql?q=");
+            if (params.getTag().equals("detail")) {
+                // Build a detail query
+                urlStringBuilder.append(URLEncoder.encode("select * from yahoo.finance.historicaldata "
+                        + "where symbol = ", "UTF-8"));
             } else {
-              // Create a runnable to show a Toast message on the main UI thread.
-              showToast(mContext.getString(R.string.toast_stock_invalid));
+                // Build a quotes query
+                urlStringBuilder.append(URLEncoder.encode("select * from yahoo.finance.quotes where symbol "
+                        + "in (", "UTF-8"));
             }
-          }
-          hideProgress();
-
-        }catch (RemoteException | OperationApplicationException e){
-          Log.e(LOG_TAG, "Error applying batch insert", e);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
         }
-      } catch (IOException e){
-        e.printStackTrace();
-        Log.d(LOG_TAG, e.getMessage());
-        // Display the error to the user
-        showToast("Server error: " + e.getMessage());
-        hideProgress();
-      }
-    }
 
-    return result;
-  }
-
-  /**
-   * Checks that the resulting JSON contains valid quote data. Searches for invalid ticker symbols
-   * returns a valid JSON string, but the quote data is all "null" so we have to manually check.
-   * @param JSON string returned from the yahoo stocks API
-   * @return True if quote data is valid, false if not.
-     */
-  private boolean isValidQuote(String JSON){
-
-    JSONObject jsonObject = null;
-    JSONArray resultsArray = null;
-    boolean isValid = true;
-
-    try{
-      jsonObject = new JSONObject(JSON);
-      if (jsonObject != null && jsonObject.length() != 0){
-        jsonObject = jsonObject.getJSONObject("query");
-        int count = Integer.parseInt(jsonObject.getString("count"));
-        if (count == 1){
-          jsonObject = jsonObject.getJSONObject("results")
-                  .getJSONObject("quote");
-
-          // If this field == 'null' then the quote is invalid
-          if(jsonObject.getString("Ask").equals("null")){
-            isValid = false;
-          }
-
-        } else{
-          resultsArray = jsonObject.getJSONObject("results").getJSONArray("quote");
-
-          if (resultsArray != null && resultsArray.length() != 0){
-            for (int i = 0; i < resultsArray.length(); i++){
-              jsonObject = resultsArray.getJSONObject(i);
-
-              // If this field == 'null' then the quote is invalid
-              if(jsonObject.getString("Ask").equals("null")){
-                isValid = false;
-              }
-
+        // Create a recurring query url
+        if (params.getTag().equals("init") || params.getTag().equals("periodic")) {
+            isUpdate = true;
+            initQueryCursor = mContext.getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
+                    new String[]{"Distinct " + QuoteColumns.SYMBOL}, null,
+                    null, null);
+            if (initQueryCursor.getCount() == 0 || initQueryCursor == null) {
+                // Init task. Populates DB with quotes for the symbols seen below
+                try {
+                    urlStringBuilder.append(
+                            URLEncoder.encode("\"YHOO\",\"AAPL\",\"GOOG\",\"MSFT\")", "UTF-8"));
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+            } else if (initQueryCursor != null) {
+                DatabaseUtils.dumpCursor(initQueryCursor);
+                initQueryCursor.moveToFirst();
+                for (int i = 0; i < initQueryCursor.getCount(); i++) {
+                    mStoredSymbols.append("\"" +
+                            initQueryCursor.getString(initQueryCursor.getColumnIndex("symbol")) + "\",");
+                    initQueryCursor.moveToNext();
+                }
+                mStoredSymbols.replace(mStoredSymbols.length() - 1, mStoredSymbols.length(), ")");
+                try {
+                    urlStringBuilder.append(URLEncoder.encode(mStoredSymbols.toString(), "UTF-8"));
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
             }
-          }
+
+            // Create a new stock query URL
+        } else if (params.getTag().equals("add")) {
+            isUpdate = false;
+            // get symbol from params.getExtra and build query
+            String stockInput = params.getExtras().getString("symbol");
+            try {
+                urlStringBuilder.append(URLEncoder.encode("\"" + stockInput + "\")", "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+
+            // Create a stock detail query URL
+        } else if (params.getTag().equals("detail")) {
+            isUpdate = false;
+            // get symbol from params.getExtra and build query
+            String stockInput = params.getExtras().getString("symbol");
+
+            try {
+                // Get the current date
+                Calendar cal = Calendar.getInstance();
+                Date endDate = cal.getTime();
+                cal.add(Calendar.MONTH, -1);
+                Date startDate = cal.getTime();
+
+                // Format dates
+                String endDateString = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(endDate);
+                String startDateString = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(startDate);
+
+                urlStringBuilder.append(URLEncoder.encode("\"" + stockInput + "\"", "UTF-8"));
+                urlStringBuilder.append(URLEncoder.encode(" and startDate = \"" + startDateString + "\"" +
+                        " and endDate = \"" + endDateString + "\"", "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+
         }
-      }
-    } catch (JSONException e){
-      Log.e(LOG_TAG, "String to JSON failed: " + e);
+
+
+        // finalize the URL for the API query.
+        urlStringBuilder.append("&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables."
+                + "org%2Falltableswithkeys&callback=");
+
+        String urlString;
+        String getResponse;
+        int result = GcmNetworkManager.RESULT_FAILURE;
+
+        if (urlStringBuilder != null) {
+            urlString = urlStringBuilder.toString();
+            Log.d(LOG_TAG, "URL is: " + urlString);
+            try {
+                // Network communication starts, show progress bar until result is received
+                showProgress();
+                getResponse = fetchData(urlString);
+                result = GcmNetworkManager.RESULT_SUCCESS;
+                try {
+                    ContentValues contentValues = new ContentValues();
+                    // update ISCURRENT to 0 (false) so new data is current
+                    if (isUpdate) {
+                        contentValues.put(QuoteColumns.ISCURRENT, 0);
+                        mContext.getContentResolver().update(QuoteProvider.Quotes.CONTENT_URI, contentValues,
+                                null, null);
+                    }
+
+                    if (params.getTag().equals("detail")) {
+                        // Process the result for details
+                        sendResult(getResponse);
+                    } else {
+                        // Process the result for a quote
+                        if (isValidQuote(getResponse)) {
+                            mContext.getContentResolver().applyBatch(QuoteProvider.AUTHORITY,
+                                    Utils.quoteJsonToContentVals(getResponse));
+                        } else {
+                            // Create a runnable to show a Toast message on the main UI thread.
+                            showToast(mContext.getString(R.string.toast_stock_invalid));
+                        }
+                    }
+                    hideProgress();
+
+                } catch (RemoteException | OperationApplicationException e) {
+                    Log.e(LOG_TAG, "Error applying batch insert", e);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.d(LOG_TAG, e.getMessage());
+                // Display the error to the user
+                showToast("Server error: " + e.getMessage());
+                hideProgress();
+            }
+        }
+
+        return result;
     }
 
-    if(isValid){
-      Log.d(LOG_TAG, "Quote is valid.");
-    } else {
-      Log.d(LOG_TAG, "Quote is invalid.");
-    }
-    return isValid;
-  }
-
-  /**
-   * This method is used to display toast messages to the user
-   * @param message to be shown to the user
+    /**
+     * Checks that the resulting JSON contains valid quote data. Searches for invalid ticker symbols
+     * returns a valid JSON string, but the quote data is all "null" so we have to manually check.
+     *
+     * @param JSON string returned from the yahoo stocks API
+     * @return True if quote data is valid, false if not.
      */
-  private void showToast(final String message){
-    Handler handler = new Handler(Looper.getMainLooper());
-    handler.post(new Runnable() {
+    private boolean isValidQuote(String JSON) {
 
-      @Override
-      public void run() {
-        Toast.makeText(mContext,
-                message,
-                Toast.LENGTH_SHORT).show();
-      }
-    });
-  }
+        JSONObject jsonObject = null;
+        JSONArray resultsArray = null;
+        boolean isValid = true;
 
-  /**
-   * Send an intent to the stocks activity to display the progress bar
-   */
-  private void showProgress(){
-    Intent intent = new Intent("update-progress-event");
-    // Add whether to display the progress bar
-    intent.putExtra("display-progress", true);
-    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-  }
+        try {
+            jsonObject = new JSONObject(JSON);
+            if (jsonObject != null && jsonObject.length() != 0) {
+                jsonObject = jsonObject.getJSONObject("query");
+                int count = Integer.parseInt(jsonObject.getString("count"));
+                if (count == 1) {
+                    jsonObject = jsonObject.getJSONObject("results")
+                            .getJSONObject("quote");
 
-  /**
-   * Send an intent to the stocks activity to hide the progress bar
-   */
-  private void hideProgress(){
-    Intent intent = new Intent("update-progress-event");
-    // Add whether to display the progress bar
-    intent.putExtra("display-progress", false);
-    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-  }
+                    // If this field == 'null' then the quote is invalid
+                    if (jsonObject.getString("Ask").equals("null")) {
+                        isValid = false;
+                    }
 
-  /**
-   * Send the resulting detail JSON back to the detail activity for processing
-   */
-  private void sendResult(String result){
-    Intent intent = new Intent("send-result-event");
-    intent.putExtra("result", result);
-    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-    stopSelf();
-  }
+                } else {
+                    resultsArray = jsonObject.getJSONObject("results").getJSONArray("quote");
+
+                    if (resultsArray != null && resultsArray.length() != 0) {
+                        for (int i = 0; i < resultsArray.length(); i++) {
+                            jsonObject = resultsArray.getJSONObject(i);
+
+                            // If this field == 'null' then the quote is invalid
+                            if (jsonObject.getString("Ask").equals("null")) {
+                                isValid = false;
+                            }
+
+                        }
+                    }
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(LOG_TAG, "String to JSON failed: " + e);
+        }
+
+        if (isValid) {
+            Log.d(LOG_TAG, "Quote is valid.");
+        } else {
+            Log.d(LOG_TAG, "Quote is invalid.");
+        }
+        return isValid;
+    }
+
+    // BROADCAST METHODS
+
+    /**
+     * This method is used to display toast messages to the user
+     *
+     * @param message to be shown to the user
+     */
+    private void showToast(final String message) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+
+            @Override
+            public void run() {
+                Toast.makeText(mContext,
+                        message,
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    /**
+     * Send an intent to the stocks activity to display the progress bar
+     */
+    private void showProgress() {
+        Intent intent = new Intent(ACTION_UPDATE_PROGRESS);
+        // Add whether to display the progress bar
+        intent.putExtra(EXTRA_UPDATE_PROGRESS, true);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    /**
+     * Send an intent to the stocks activity to hide the progress bar
+     */
+    private void hideProgress() {
+        Intent intent = new Intent(ACTION_UPDATE_PROGRESS);
+        // Add whether to display the progress bar
+        intent.putExtra(EXTRA_UPDATE_PROGRESS, false);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    /**
+     * Send the resulting detail JSON back to the detail activity for processing
+     */
+    private void sendResult(String result) {
+        Intent intent = new Intent(ACTION_SEND_RESULTS);
+        intent.putExtra(EXTRA_SEND_RESULTS, result);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        stopSelf();
+    }
 
 }
 
