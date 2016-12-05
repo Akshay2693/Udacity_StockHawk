@@ -5,11 +5,14 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.Binder;
 import android.os.Build;
+import android.util.Log;
 import android.widget.AdapterView;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 
 import com.sam_chordas.android.stockhawk.R;
+import com.sam_chordas.android.stockhawk.data.QuoteColumns;
+import com.sam_chordas.android.stockhawk.data.QuoteProvider;
 
 /**
  * Created by Jayson Dela Cruz on 11/22/2016.
@@ -24,12 +27,14 @@ public class StockhawkWidgetRemoteViewsService extends RemoteViewsService {
 
     @Override
     public RemoteViewsFactory onGetViewFactory(Intent intent) {
+        Log.d(LOG_TAG, "Widget onGetViewFactory called.");
         return new RemoteViewsFactory(){
 
             private Cursor data = null;
 
             @Override
             public void onCreate() {
+                Log.d(LOG_TAG, "Widget created.");
                 // Nothing to do
             }
 
@@ -44,17 +49,19 @@ public class StockhawkWidgetRemoteViewsService extends RemoteViewsService {
                 // data. Therefore we need to clear (and finally restore) the calling identity so
                 // that calls use our process and permission
                 final long identityToken = Binder.clearCallingIdentity();
-                // TODO: Get updated quotes data from the ContentProvider
-//                String location = Utility.getPreferredLocation(DetailWidgetRemoteViewsService.this);
-//                Uri weatherForLocationUri = WeatherContract.WeatherEntry
-//                        .buildWeatherLocationWithStartDate(location, System.currentTimeMillis());
-//                data = getContentResolver().query(weatherForLocationUri,
-//                        FORECAST_COLUMNS,
-//                        null,
-//                        null,
-//                        WeatherContract.WeatherEntry.COLUMN_DATE + " ASC");
-                Binder.restoreCallingIdentity(identityToken);
 
+                // Get get quotes from provider where "ISCURRENT = True"
+                data = getContentResolver().query(QuoteProvider.Quotes.CONTENT_URI,
+                        new String[]{QuoteColumns._ID,
+                                QuoteColumns.SYMBOL,
+                                QuoteColumns.BIDPRICE,
+                                QuoteColumns.PERCENT_CHANGE,
+                                QuoteColumns.CHANGE,
+                                QuoteColumns.ISUP},
+                        QuoteColumns.ISCURRENT + " = ?",
+                        new String[]{"1"},
+                        null);
+                Binder.restoreCallingIdentity(identityToken);
 
             }
 
@@ -85,14 +92,16 @@ public class StockhawkWidgetRemoteViewsService extends RemoteViewsService {
                 }
 
                 RemoteViews views = new RemoteViews(getPackageName(),
-                        R.layout.widget_quotes);
+                        R.layout.list_item_widget_quote);
 
                 // TODO: populate views
+                String symbol = data.getString(data.getColumnIndex(QuoteColumns.SYMBOL));
+
+                views.setTextViewText(R.id.widget_symbol, "Position " + symbol);
 
                 final Intent fillInIntent = new Intent();
-                String symbol = "AAPL";
                 fillInIntent.putExtra("symbol", symbol);
-                views.setOnClickFillInIntent(R.id.widget_quote, fillInIntent);
+                views.setOnClickFillInIntent(R.id.widget_symbol, fillInIntent);
 
                 return views;
             }

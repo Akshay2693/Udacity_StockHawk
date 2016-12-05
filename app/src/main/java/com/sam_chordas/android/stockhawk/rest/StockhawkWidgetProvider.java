@@ -51,6 +51,9 @@ public class StockhawkWidgetProvider extends AppWidgetProvider{
             // Set empty view
             views.setEmptyView(R.id.widget_quote_list, R.id.widget_empty);
 
+            // Tell the AppWidgetManager to perform an update on the current app widget
+            appWidgetManager.updateAppWidget(appWidgetId, views);
+
         }
 
     }
