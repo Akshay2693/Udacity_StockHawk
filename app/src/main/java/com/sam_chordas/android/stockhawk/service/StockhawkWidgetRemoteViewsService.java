@@ -94,14 +94,25 @@ public class StockhawkWidgetRemoteViewsService extends RemoteViewsService {
                 RemoteViews views = new RemoteViews(getPackageName(),
                         R.layout.list_item_widget_quote);
 
-                // TODO: populate views
                 String symbol = data.getString(data.getColumnIndex(QuoteColumns.SYMBOL));
+                String price = data.getString(data.getColumnIndex(QuoteColumns.BIDPRICE));
+                String change = data.getString(data.getColumnIndex(QuoteColumns.PERCENT_CHANGE));
 
-                views.setTextViewText(R.id.widget_symbol, "Position " + symbol);
+                views.setTextViewText(R.id.widget_symbol, symbol);
+                views.setTextViewText(R.id.widget_data, change);
+
+                // Change text color based on "is_up"
+                if(data.getInt(data.getColumnIndex(QuoteColumns.ISUP)) == 1){
+                    views.setTextColor(R.id.widget_data, getResources().
+                            getColor(R.color.material_green_700, null));
+                } else {
+                    views.setTextColor(R.id.widget_data, getResources().
+                            getColor(R.color.material_red_700, null));
+                }
 
                 final Intent fillInIntent = new Intent();
                 fillInIntent.putExtra("symbol", symbol);
-                views.setOnClickFillInIntent(R.id.widget_symbol, fillInIntent);
+                views.setOnClickFillInIntent(R.id.widget_quote, fillInIntent);
 
                 return views;
             }
