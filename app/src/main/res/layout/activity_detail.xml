@@ -33,7 +33,7 @@
                 android:layout_marginTop="16dp"
                 android:layout_centerHorizontal="true"
                 style="@style/StockSymbolTextStyle"
-                android:text="$117.57" />
+                tools:text="$117.57" />
             <TextView
                 android:id="@+id/detail_change"
                 android:layout_width="wrap_content"
@@ -41,7 +41,7 @@
                 android:layout_below="@id/detail_current_price"
                 android:layout_centerHorizontal="true"
                 android:layout_marginBottom="16dp"
-                android:text="-+$2.58 (+2.34%) Past Month"/>
+                tools:text="-+$2.58 (+2.34%) Past Month"/>
 
             <com.db.chart.view.LineChartView
                 xmlns:chart="http://schemas.android.com/apk/res-auto"

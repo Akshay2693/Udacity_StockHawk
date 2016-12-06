@@ -8,7 +8,7 @@
     <string name="action_add_stock">Add New Stock</string>
     <string name="symbol_search">Symbol Search</string>
     <string name="content_test">Search for a Stock Symbol</string>
-    <string name="input_hint">FB</string>
+    <string name="input_hint" translatable="false">FB</string>
     <string name="input_prefill"></string>
 
     <!-- Toast Messages -->
