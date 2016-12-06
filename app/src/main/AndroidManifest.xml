@@ -43,8 +43,13 @@
             android:authorities="com.sam_chordas.android.stockhawk.data.QuoteProvider"
             android:exported="false" />
 
-        <activity android:name=".ui.DetailActivity"/>
-
+        <activity
+            android:name=".ui.DetailActivity"
+            android:parentActivityName=".ui.MyStocksActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.sam_chordas.android.stockhawk.ui.MyStocksActivity"/>
+        </activity>
         <!-- Stockhawk Quotes Widget -->
 
         <receiver android:name=".rest.StockhawkWidgetProvider">

@@ -9,6 +9,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -26,8 +27,6 @@ import com.sam_chordas.android.stockhawk.rest.Utils;
 import com.sam_chordas.android.stockhawk.service.StockIntentService;
 import com.sam_chordas.android.stockhawk.service.StockTaskService;
 
-import static android.R.attr.data;
-
 public class DetailActivity extends AppCompatActivity {
 
     private String LOG_TAG = getClass().getSimpleName();
@@ -40,6 +39,9 @@ public class DetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
         mContext = this;
+
+        ActionBar ab = this.getSupportActionBar();
+        ab.setDisplayHomeAsUpEnabled(true);
 
         // Set title
         this.setTitle(getIntent().getStringExtra("symbol").toUpperCase());
@@ -132,6 +134,9 @@ public class DetailActivity extends AppCompatActivity {
             detailChart.addData(dataSet);
             detailChart.setAxisBorderValues(min, max);
             detailChart.show(anim);
+
+            // Content description
+            detailChart.setContentDescription(getString(R.string.content_description_graph));
 
             Log.d(LOG_TAG, result);
             //textView.setText(getIntent().getStringExtra("symbol"));
